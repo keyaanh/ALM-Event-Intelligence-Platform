@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --maroon: #7B1C2E;
+  --maroon-dark: #5a1321;
+  --maroon-light: #9e2a40;
+  --maroon-faint: #f9f0f2;
+  --maroon-subtle: #f2e4e7;
+  --gold: #C9963A;
+  --gold-light: #e0b05a;
+  --white: #ffffff;
+  --off-white: #fafaf9;
+  --gray-50: #f8f7f6;
+  --gray-100: #f0efed;
+  --gray-200: #e2e0dd;
+  --gray-300: #c9c6c1;
+  --gray-500: #8a8680;
+  --gray-700: #4a4744;
+  --gray-900: #1a1917;
+  --border: #e8e5e1;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow: 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--off-white);
+  color: var(--gray-900);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { font-family: var(--font-display); }
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-hover { transition: box-shadow 0.2s, transform 0.2s; }
+.card-hover:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-body); font-weight: 600; font-size: 0.875rem;
+  padding: 0.6rem 1.25rem; border-radius: 8px; border: none;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.btn-primary { background: var(--maroon); color: white; }
+.btn-primary:hover { background: var(--maroon-dark); box-shadow: 0 4px 12px rgba(123,28,46,0.25); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-outline { background: transparent; color: var(--maroon); border: 1.5px solid var(--maroon); }
+.btn-outline:hover { background: var(--maroon-faint); }
+.btn-ghost { background: transparent; color: var(--gray-700); border: 1.5px solid var(--border); }
+.btn-ghost:hover { background: var(--gray-50); }
+
+.form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+
+label {
+  font-size: 0.71rem; font-weight: 600; color: var(--gray-500);
+  text-transform: uppercase; letter-spacing: 0.07em;
+}
+
+input, select, textarea {
+  background: var(--white); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--gray-900);
+  padding: 0.65rem 0.9rem; font-family: var(--font-body);
+  font-size: 0.9rem; width: 100%; transition: border-color 0.15s, box-shadow 0.15s;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--maroon);
+  box-shadow: 0 0 0 3px rgba(123,28,46,0.08);
+}
+input::placeholder, textarea::placeholder { color: var(--gray-300); }
+
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 0.18rem 0.6rem; border-radius: 99px;
+  font-size: 0.68rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.badge-pending  { background: #fffbeb; color: #92660a; border: 1px solid #fde68a; }
+.badge-approved { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+.badge-rejected { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+.badge-needs_revision { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+
+.page { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem; }
+
+.tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 1.75rem; }
+.tab {
+  padding: 0.65rem 1.2rem; font-size: 0.84rem; font-weight: 600;
+  color: var(--gray-500); cursor: pointer; border: none; background: none;
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+  transition: all 0.15s; font-family: var(--font-body);
+}
+.tab:hover { color: var(--maroon); }
+.tab.active { color: var(--maroon); border-bottom-color: var(--maroon); }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+.fade-in { animation: fadeIn 0.25s ease forwards; }
+.spin { animation: spin 1s linear infinite; }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 3px; }
