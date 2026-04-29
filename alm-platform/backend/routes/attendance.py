@@ -9,6 +9,76 @@ router = APIRouter(prefix="/attendance", tags=["attendance"])
 
 MANDATORY_TYPES = {'social','fundraiser','professional','service','religious','chapter_meeting','brotherhood'}
 
+@router.get("/public/members")
+async def get_public_members():
+    """Public — returns member names and IDs only for portal search."""
+    result = supabase_admin.table("members").select("id,full_name").eq("is_active", True).order("full_name").execute()
+    return result.data
+
+
+@router.post("/public/verify-pin")
+async def verify_pin(member_id: str, pin: str):
+    """Verify a member's portal PIN without exposing data."""
+    result = supabase_admin.table("members").select("portal_pin").eq("id", member_id).execute()
+    if not result.data:
+        return {"valid": False}
+    stored_pin = result.data[0].get("portal_pin")
+    if not stored_pin:
+        return {"valid": False, "no_pin": True}
+    return {"valid": stored_pin == pin}
+
+
+@router.get("/public/my-attendance/{member_id}")
+async def get_my_attendance(member_id: str, pin: str):
+    """Get attendance for a specific member after PIN verification."""
+    # Verify PIN first
+    result = supabase_admin.table("members").select("portal_pin,full_name").eq("id", member_id).execute()
+    if not result.data:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Member not found")
+    
+    stored_pin = result.data[0].get("portal_pin")
+    if not stored_pin or stored_pin != pin:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Invalid PIN")
+
+    # Get strikes data
+    MANDATORY_TYPES = {"social","fundraiser","professional","service","religious","chapter_meeting","brotherhood"}
+    mandatory_events = supabase_admin.table("events").select("id,name,event_type,date").execute()
+    mandatory = [e for e in mandatory_events.data if e.get("event_type") in MANDATORY_TYPES]
+    mandatory_ids = [e["id"] for e in mandatory]
+
+    all_att = supabase_admin.table("attendance").select("*").eq("member_id", member_id).execute()
+    att_map = {a["event_id"]: a["status"] for a in all_att.data}
+
+    tardies = sum(1 for eid in mandatory_ids if att_map.get(eid) == "tardy")
+    unexcused = sum(1 for eid in mandatory_ids if att_map.get(eid) == "absent")
+    present = sum(1 for eid in mandatory_ids if att_map.get(eid) == "present")
+    excused = sum(1 for eid in mandatory_ids if att_map.get(eid) == "excused")
+    strikes = (tardies // 2) + unexcused
+
+    # Build event-by-event history
+    history = []
+    for ev in mandatory_events.data:
+        status = att_map.get(ev["id"])
+        if status:
+            history.append({"event": ev, "status": status})
+
+    return {
+        "full_name": result.data[0]["full_name"],
+        "present": present,
+        "tardy": tardies,
+        "excused": excused,
+        "unexcused": unexcused,
+        "strikes": strikes,
+        "retreat_ineligible": strikes >= 3,
+        "total_mandatory": len(mandatory),
+        "history": sorted(history, key=lambda x: x["event"]["date"], reverse=True)
+    }
+
+
+
+
 class AttendanceRecord(BaseModel):
     member_id: str
     status: str  # present, tardy, excused, absent
@@ -16,6 +86,64 @@ class AttendanceRecord(BaseModel):
 class BulkAttendance(BaseModel):
     event_id: str
     records: List[AttendanceRecord]
+
+
+@router.get("/public/members")
+async def get_public_members():
+    """Public endpoint - returns member names and IDs only, no sensitive data"""
+    result = supabase_admin.table("members").select("id,full_name").eq("is_active", True).order("full_name").execute()
+    return result.data
+
+
+@router.get("/public/member/{member_id}")
+async def get_public_member_record(member_id: str):
+    """Public endpoint - returns only strikes/eligibility, NOT specific event attendance"""
+    members = supabase_admin.table("members").select("*").eq("is_active", True).execute()
+    member = next((m for m in members.data if m["id"] == member_id), None)
+    if not member:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Member not found")
+
+    MANDATORY_TYPES = {"social","fundraiser","professional","service","religious","chapter_meeting","brotherhood"}
+    mandatory_events = supabase_admin.table("events").select("id,name,event_type,date").execute()
+    mandatory = [e for e in mandatory_events.data if e.get("event_type") in MANDATORY_TYPES]
+    mandatory_ids = [e["id"] for e in mandatory]
+
+    all_att = supabase_admin.table("attendance").select("*").eq("member_id", member_id).execute()
+    att_map = {a["event_id"]: a["status"] for a in all_att.data}
+
+    tardies = sum(1 for eid in mandatory_ids if att_map.get(eid) == "tardy")
+    unexcused = sum(1 for eid in mandatory_ids if att_map.get(eid) == "absent")
+    excused = sum(1 for eid in mandatory_ids if att_map.get(eid) == "excused")
+    present = sum(1 for eid in mandatory_ids if att_map.get(eid) == "present")
+    strikes = (tardies // 2) + unexcused
+    retreat_ineligible = strikes >= 3
+
+    # Only return summary stats — NOT which specific events were missed
+    return {
+        "member_id": member_id,
+        "full_name": member["full_name"],
+        "present": present,
+        "tardy": tardies,
+        "excused": excused,
+        "unexcused": unexcused,
+        "strikes": strikes,
+        "retreat_ineligible": retreat_ineligible,
+        "total_mandatory_events": len(mandatory),
+        "events_attended": present + tardies,
+    }
+
+
+class PinUpdate(BaseModel):
+    pin: str
+
+@router.patch("/members/{member_id}/pin")
+async def update_member_pin(member_id: str, body: PinUpdate, current_user=Depends(require_role("vp_standards", "president"))):
+    """Standards officer sets a member's portal PIN."""
+    if not body.pin.isdigit() or len(body.pin) != 4:
+        raise HTTPException(status_code=400, detail="PIN must be exactly 4 digits")
+    supabase_admin.table("members").update({"portal_pin": body.pin}).eq("id", member_id).execute()
+    return {"message": "PIN updated"}
 
 @router.get("/members")
 async def get_members(current_user=Depends(get_current_user)):

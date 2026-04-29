@@ -9,10 +9,19 @@ from typing import List
 router = APIRouter(prefix="/events", tags=["events"])
 
 
+
+@router.get("/public")
+async def get_public_events():
+    """Public endpoint — no auth required. Returns events for member portal."""
+    result = supabase_admin.table("events").select(
+        "id,name,event_type,date,venue,expected_attendees,description"
+    ).order("date", desc=False).execute()
+    return result.data
+
 @router.post("/", response_model=EventResponse)
 async def create_event(
     body: EventCreate,
-    current_user=Depends(require_role("vp_events", "admin"))
+    current_user=Depends(require_role("vp_events", "president"))
 ):
     # Generate AI checklist for this event type
     checklist = await generate_event_checklist(
@@ -46,6 +55,15 @@ async def create_event(
     return _format_event(event)
 
 
+
+@router.get("/public")
+async def get_public_events():
+    """Public endpoint - no auth required, returns only basic event info"""
+    result = supabase_admin.table("events").select(
+        "id,name,event_type,date,venue,expected_attendees,description"
+    ).order("date", desc=False).execute()
+    return [_format_event(e) for e in result.data]
+
 @router.get("/", response_model=List[EventResponse])
 async def get_events(current_user=Depends(get_current_user)):
     result = supabase_admin.table("events").select("*").order("date", desc=False).execute()
@@ -61,7 +79,7 @@ async def get_event(event_id: str, current_user=Depends(get_current_user)):
 
 
 @router.delete("/{event_id}")
-async def delete_event(event_id: str, current_user=Depends(require_role("vp_events", "admin"))):
+async def delete_event(event_id: str, current_user=Depends(require_role("vp_events", "president"))):
     result = supabase_admin.table("events").select("name").eq("id", event_id).execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Event not found")

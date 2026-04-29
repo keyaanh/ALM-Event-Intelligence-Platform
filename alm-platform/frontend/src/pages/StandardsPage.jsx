@@ -20,8 +20,20 @@ export default function StandardsPage() {
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [saving, setSaving] = useState(false)
   const [tab, setTab] = useState('tracker')
+  const [pins, setPins] = useState({})
+  const [savingPin, setSavingPin] = useState(null)
   const role = localStorage.getItem('alm_role')
   const canEdit = role === 'vp_standards' || role === 'president'
+
+  const savePin = async (memberId, pin) => {
+    if (!pin || pin.length !== 4 || isNaN(pin)) { alert('PIN must be exactly 4 digits'); return }
+    setSavingPin(memberId)
+    try {
+      await api.patch(`/attendance/members/${memberId}/pin`, { pin })
+      alert('PIN saved!')
+    } catch (err) { alert('Failed to save PIN') }
+    finally { setSavingPin(null) }
+  }
 
   useEffect(() => { fetchAll() }, [])
 
@@ -245,7 +257,34 @@ export default function StandardsPage() {
               </tbody>
             </table>
           </div>
-        </div>
+        {/* PIN Management */}
+        {canEdit && (
+          <div style={{ marginTop:'1.5rem' }}>
+            <p style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--gray-700)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'0.75rem' }}>Member Portal PINs</p>
+            <p style={{ fontSize:'0.82rem', color:'var(--gray-500)', marginBottom:'1rem' }}>Set a 4-digit PIN for each member so they can privately view their own attendance on the member portal.</p>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px,1fr))', gap:'0.6rem' }}>
+              {strikes?.members?.map(m => (
+                <div key={m.member_id} style={{ display:'flex', alignItems:'center', gap:8, padding:'0.6rem 0.75rem', background:'white', borderRadius:8, border:'1px solid var(--border)' }}>
+                  <span style={{ fontSize:'0.82rem', fontWeight:600, color:'var(--gray-900)', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{m.full_name}</span>
+                  <input
+                    type="text" maxLength={4} placeholder="PIN"
+                    value={pins[m.member_id] || ''}
+                    onChange={e => setPins(p => ({...p, [m.member_id]: e.target.value.replace(/\D/g,'').slice(0,4)}))}
+                    style={{ width:56, padding:'0.3rem 0.4rem', fontSize:'0.82rem', textAlign:'center', letterSpacing:'0.15em' }}
+                  />
+                  <button
+                    onClick={() => savePin(m.member_id, pins[m.member_id])}
+                    disabled={savingPin === m.member_id || !pins[m.member_id]}
+                    className="btn btn-primary"
+                    style={{ padding:'0.3rem 0.6rem', fontSize:'0.72rem', flexShrink:0 }}>
+                    {savingPin === m.member_id ? '…' : 'Set'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
       )}
     </div>
   )
