@@ -5,13 +5,9 @@ import os
 
 load_dotenv()
 
-from routes import auth, events, budget, ai_service, attendance, tasks
+from routes import auth, events, budget, ai_service, attendance, tasks, dues, education, pdf_export
 
-app = FastAPI(
-    title="ALM Event Platform API",
-    description="Backend for ALM student organization Shura management",
-    version="2.0.0"
-)
+app = FastAPI(title="ALM Platform API", version="4.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,11 +23,10 @@ app.include_router(budget.router)
 app.include_router(ai_service.router)
 app.include_router(attendance.router)
 app.include_router(tasks.router)
+app.include_router(dues.router)
+app.include_router(education.router)
+app.include_router(pdf_export.router)
 
 @app.get("/")
 async def root():
-    return {"status": "ALM Platform API running", "version": "2.0.0"}
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
+    return {"status": "ALM Platform API running", "version": "4.0.0"}

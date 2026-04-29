@@ -8,6 +8,7 @@ const ROLES = [
   { value: 'vp_finance', label: 'VP of Finance' },
   { value: 'vp_outreach', label: 'VP of Outreach' },
   { value: 'vp_standards', label: 'VP of Standards' },
+  { value: 'vp_education', label: 'VP of Education' },
   { value: 'member', label: 'Member' },
 ]
 
