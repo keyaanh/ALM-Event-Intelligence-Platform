@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
+import BudgetRequestModal from '../components/BudgetRequestModal'
 import api from '../lib/api'
 import EventCard from '../components/EventCard'
-import { Plus, Loader2, CalendarDays, Users, TrendingUp, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Loader2, CalendarDays, Users, TrendingUp, Clock, ChevronLeft, ChevronRight, DollarSign } from 'lucide-react'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 const EVENT_TYPES = [
@@ -27,6 +28,7 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 
 export default function EventDashboard() {
   const [events, setEvents] = useState([])
+  const [showBudgetModal, setShowBudgetModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -105,12 +107,20 @@ export default function EventDashboard() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2rem' }}>
         <div>
           <h1 style={{ fontSize: '1.75rem', letterSpacing: '-0.02em' }}>Events</h1>
-          <p style={{ color: 'var(--gray-500)', fontSize: '0.84rem', marginTop: 3 }}>Manage and track Alpha Lambda Mu events</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.84rem', marginTop: 3 }}>Manage and track Alpha Lambda Mu events</p>
         </div>
         {canEdit && (
-          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-            <Plus size={15} /> New Event
-          </button>
+          <div style={{display:'flex',gap:'0.6rem'}}>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => setShowBudgetModal(true)}
+              style={{ display:'flex', alignItems:'center', gap:5 }}>
+              <DollarSign size={13}/> Budget Request
+            </button>
+            <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+              <Plus size={15} /> New Event
+            </button>
+          </div>
         )}
       </div>
 
@@ -118,15 +128,15 @@ export default function EventDashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.75rem' }}>
         {[
           { label: 'Total Events', value: events.length, icon: <CalendarDays size={18} />, color: 'var(--maroon)' },
-          { label: 'Upcoming', value: upcoming.length, icon: <Clock size={18} />, color: '#3b82f6' },
-          { label: 'Past Events', value: past.length, icon: <TrendingUp size={18} />, color: '#10b981' },
+          { label: 'Upcoming', value: upcoming.length, icon: <Clock size={18} />, color: 'var(--blue)' },
+          { label: 'Past Events', value: past.length, icon: <TrendingUp size={18} />, color: 'var(--green)' },
           { label: 'Chapter Attendance', value: chapterRate !== null ? `${chapterRate}%` : '—', icon: <Users size={18} />, color: chapterRate >= 75 ? '#10b981' : chapterRate >= 50 ? '#f59e0b' : '#ef4444' },
         ].map(s => (
           <div key={s.label} className="card card-hover" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div style={{ width: 42, height: 42, borderRadius: 10, background: `${s.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color, flexShrink: 0 }}>{s.icon}</div>
             <div>
               <div style={{ fontSize: '1.4rem', fontFamily: 'var(--font-display)', fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.value}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: 3, fontWeight: 500 }}>{s.label}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3, fontWeight: 500 }}>{s.label}</div>
             </div>
           </div>
         ))}
@@ -136,7 +146,7 @@ export default function EventDashboard() {
       {events.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.75rem' }}>
           <div className="card">
-            <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--gray-700)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '1rem' }}>Events by Type</p>
+            <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '1rem' }}>Events by Type</p>
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
                 <Pie data={typeData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
@@ -148,11 +158,11 @@ export default function EventDashboard() {
             </ResponsiveContainer>
           </div>
           <div className="card">
-            <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--gray-700)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '1rem' }}>Expected vs Actual Attendance</p>
+            <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '1rem' }}>Expected vs Actual Attendance</p>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={attendanceData} barSize={18}>
-                <XAxis dataKey="name" tick={{ fill: 'var(--gray-500)', fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: 'var(--gray-500)', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 10 }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ background: 'white', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="expected" fill="var(--maroon)" radius={[4,4,0,0]} opacity={0.5} name="Expected" />
@@ -221,13 +231,13 @@ export default function EventDashboard() {
         <div className="fade-in">
           <div style={{ display: 'flex', gap: 0, marginBottom: '1.25rem' }}>
             {[{ key: 'all', label: `All (${events.length})` }, { key: 'upcoming', label: `Upcoming (${upcoming.length})` }, { key: 'past', label: `Past (${past.length})` }].map(t => (
-              <button key={t.key} onClick={() => setListTab(t.key)} style={{ padding: '0.4rem 1rem', borderRadius: 7, border: '1.5px solid', borderColor: listTab === t.key ? 'var(--maroon)' : 'var(--border)', background: listTab === t.key ? 'var(--maroon-faint)' : 'white', color: listTab === t.key ? 'var(--maroon)' : 'var(--gray-500)', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', marginRight: 6, transition: 'all 0.15s' }}>{t.label}</button>
+              <button key={t.key} onClick={() => setListTab(t.key)} style={{ padding: '0.4rem 1rem', borderRadius: 7, border: '1.5px solid', borderColor: listTab === t.key ? 'var(--maroon)' : 'var(--border)', background: listTab === t.key ? 'var(--maroon-faint)' : 'white', color: listTab === t.key ? 'var(--maroon)' : 'var(--text-muted)', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', marginRight: 6, transition: 'all 0.15s' }}>{t.label}</button>
             ))}
           </div>
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--gray-500)' }}>Loading…</div>
+            <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>Loading…</div>
           ) : filteredEvents.length === 0 ? (
-            <div className="card" style={{ textAlign: 'center', padding: '4rem', color: 'var(--gray-500)' }}>
+            <div className="card" style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
               <CalendarDays size={32} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
               <p style={{ fontWeight: 600 }}>No events yet</p>
             </div>
@@ -254,7 +264,7 @@ export default function EventDashboard() {
             {/* Day headers */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid var(--border)' }}>
               {DAYS.map(d => (
-                <div key={d} style={{ padding: '0.6rem', textAlign: 'center', fontSize: '0.72rem', fontWeight: 700, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'var(--gray-50)' }}>{d}</div>
+                <div key={d} style={{ padding: '0.6rem', textAlign: 'center', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'var(--surface)' }}>{d}</div>
               ))}
             </div>
             {/* Cells */}
@@ -265,13 +275,13 @@ export default function EventDashboard() {
                 const isSelected = selectedDay === day
                 return (
                   <div key={idx} onClick={() => day && setSelectedDay(isSelected ? null : day)}
-                    style={{ minHeight: 90, padding: '0.5rem', borderRight: (idx + 1) % 7 !== 0 ? '1px solid var(--border)' : 'none', borderBottom: '1px solid var(--border)', background: active ? 'var(--maroon-faint)' : isSelected ? 'var(--gray-50)' : 'white', cursor: day ? 'pointer' : 'default', transition: 'background 0.1s' }}
-                    onMouseEnter={e => { if (day && !active) e.currentTarget.style.background = 'var(--gray-50)' }}
+                    style={{ minHeight: 90, padding: '0.5rem', borderRight: (idx + 1) % 7 !== 0 ? '1px solid var(--border)' : 'none', borderBottom: '1px solid var(--border)', background: active ? 'var(--maroon-faint)' : isSelected ? 'var(--surface)' : 'white', cursor: day ? 'pointer' : 'default', transition: 'background 0.1s' }}
+                    onMouseEnter={e => { if (day && !active) e.currentTarget.style.background = 'var(--surface)' }}
                     onMouseLeave={e => { if (day && !active && !isSelected) e.currentTarget.style.background = 'white' }}>
                     {day && (
                       <>
                         <div style={{ width: 26, height: 26, borderRadius: '50%', background: active ? 'var(--maroon)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
-                          <span style={{ fontSize: '0.82rem', fontWeight: active ? 700 : 500, color: active ? 'white' : 'var(--gray-700)' }}>{day}</span>
+                          <span style={{ fontSize: '0.82rem', fontWeight: active ? 700 : 500, color: active ? 'white' : 'var(--text-secondary)' }}>{day}</span>
                         </div>
                         {dayEvents.map(ev => (
                           <div key={ev.id} style={{ fontSize: '0.67rem', fontWeight: 600, padding: '0.15rem 0.4rem', borderRadius: 4, marginBottom: 2, background: TYPE_PALETTE[ev.event_type] || 'var(--maroon)', color: 'white', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
@@ -307,11 +317,11 @@ export default function EventDashboard() {
                     )}
                   </div>
                 ) : dayEvents.map(ev => (
-                  <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', background: 'var(--gray-50)', borderRadius: 8, marginBottom: 6 }}>
+                  <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', background: 'var(--surface)', borderRadius: 8, marginBottom: 6 }}>
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: TYPE_PALETTE[ev.event_type] || 'var(--maroon)', flexShrink: 0 }} />
                     <div style={{ flex: 1 }}>
                       <p style={{ fontWeight: 700, fontSize: '0.9rem' }}>{ev.name}</p>
-                      <p style={{ fontSize: '0.78rem', color: 'var(--gray-500)' }}>{ev.event_type.replace('_', ' ')} {ev.venue && `· ${ev.venue}`}</p>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{ev.event_type.replace('_', ' ')} {ev.venue && `· ${ev.venue}`}</p>
                       {ev.description && <p style={{ fontSize: '0.78rem', color: 'var(--gray-400)', marginTop: 2 }}>{ev.description}</p>}
                     </div>
                     <span style={{ fontSize: '0.72rem', color: 'white', background: TYPE_PALETTE[ev.event_type] || 'var(--maroon)', padding: '0.2rem 0.6rem', borderRadius: 99 }}>{ev.expected_attendees} exp.</span>
@@ -322,6 +332,7 @@ export default function EventDashboard() {
           })()}
         </div>
       )}
+      {showBudgetModal && <BudgetRequestModal onClose={() => setShowBudgetModal(false)} />}
     </div>
   )
 }

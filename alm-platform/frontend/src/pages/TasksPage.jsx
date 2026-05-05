@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
+import BudgetRequestModal from '../components/BudgetRequestModal'
 import api from '../lib/api'
-import { Plus, CheckSquare, Square, Loader2, Trash2, CheckCircle2, Clock, PlayCircle, Upload, FileText, X, Eye } from 'lucide-react'
+import { Plus, CheckSquare, Square, Loader2, Trash2, CheckCircle2, Clock, PlayCircle, Upload, FileText, X, Eye , DollarSign } from 'lucide-react'
 
 const ROLE_LABELS = {
   vp_events: 'VP of Events', vp_finance: 'VP of Finance',
@@ -13,6 +14,7 @@ const ROLE_COLORS = {
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState([])
+  const [showBudgetModal, setShowBudgetModal] = useState(false)
   const [events, setEvents] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -147,17 +149,17 @@ export default function TasksPage() {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: 700, color: 'var(--gray-900)', fontSize: '0.95rem', textDecoration: task.status === 'done' ? 'line-through' : 'none' }}>{task.title}</span>
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem', textDecoration: task.status === 'done' ? 'line-through' : 'none' }}>{task.title}</span>
               {/* Role badges — show all assigned roles */}
               {assigned.map(r => (
                 <span key={r} style={{ fontSize: '0.67rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: 99, background: `${ROLE_COLORS[r]}15`, color: ROLE_COLORS[r] }}>{ROLE_LABELS[r]}</span>
               ))}
             </div>
-            {task.description && <p style={{ fontSize: '0.81rem', color: 'var(--gray-500)', marginBottom: 4 }}>{task.description}</p>}
+            {task.description && <p style={{ fontSize: '0.81rem', color: 'var(--text-muted)', marginBottom: 4 }}>{task.description}</p>}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {task.event_name && <span style={{ fontSize: '0.71rem', color: 'var(--maroon)', background: 'var(--maroon-faint)', padding: '0.15rem 0.5rem', borderRadius: 99 }}>📅 {task.event_name}</span>}
-              {task.due_date && <span style={{ fontSize: '0.71rem', color: 'var(--gray-400)' }}>Due {new Date(task.due_date).toLocaleDateString()}</span>}
-              {uploads.length > 0 && <span style={{ fontSize: '0.71rem', color: '#3b82f6', background: '#eff6ff', padding: '0.15rem 0.5rem', borderRadius: 99 }}>📎 {uploads.length} file{uploads.length > 1 ? 's' : ''}</span>}
+              {task.due_date && <span style={{ fontSize: '0.71rem', color: 'var(--text-muted)' }}>Due {new Date(task.due_date).toLocaleDateString()}</span>}
+              {uploads.length > 0 && <span style={{ fontSize: '0.71rem', color: 'var(--blue)', background: 'var(--blue-bg)', padding: '0.15rem 0.5rem', borderRadius: 99 }}>📎 {uploads.length} file{uploads.length > 1 ? 's' : ''}</span>}
             </div>
           </div>
 
@@ -173,9 +175,9 @@ export default function TasksPage() {
               <button onClick={() => updateStatus(task.id, 'todo')} className="btn btn-ghost" style={{ padding: '0.3rem 0.7rem', fontSize: '0.75rem' }}>Reopen</button>
             )}
             {isPresident && (
-              <button onClick={() => deleteTask(task.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-300)', padding: 4, borderRadius: 4 }}
+              <button onClick={() => deleteTask(task.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--border-strong)', padding: 4, borderRadius: 4 }}
                 onMouseEnter={e => e.currentTarget.style.color='#ef4444'}
-                onMouseLeave={e => e.currentTarget.style.color='var(--gray-300)'}>
+                onMouseLeave={e => e.currentTarget.style.color='var(--border-strong)'}>
                 <Trash2 size={14} />
               </button>
             )}
@@ -197,14 +199,14 @@ export default function TasksPage() {
               {/* Checklist */}
               {task.checklist?.length > 0 && (
                 <div>
-                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.5rem' }}>Checklist</p>
+                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.5rem' }}>Checklist</p>
                   {task.checklist.map((item, i) => (
                     <div key={i} onClick={() => canAct && toggleCheckItem(task, i)}
                       style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.35rem 0.4rem', cursor: canAct ? 'pointer' : 'default', borderRadius: 6, transition: 'background 0.1s' }}
-                      onMouseEnter={e => { if(canAct) e.currentTarget.style.background='var(--gray-50)' }}
+                      onMouseEnter={e => { if(canAct) e.currentTarget.style.background='var(--surface)' }}
                       onMouseLeave={e => { e.currentTarget.style.background='transparent' }}>
                       {item.done ? <CheckSquare size={14} color="#10b981" /> : <Square size={14} color="var(--gray-300)" />}
-                      <span style={{ fontSize: '0.82rem', color: item.done ? 'var(--gray-300)' : 'var(--gray-700)', textDecoration: item.done ? 'line-through' : 'none' }}>{item.text}</span>
+                      <span style={{ fontSize: '0.82rem', color: item.done ? 'var(--border-strong)' : 'var(--text-secondary)', textDecoration: item.done ? 'line-through' : 'none' }}>{item.text}</span>
                     </div>
                   ))}
                 </div>
@@ -217,16 +219,16 @@ export default function TasksPage() {
                   <textarea defaultValue={task.notes || ''} onBlur={e => updateNotes(task.id, e.target.value)} placeholder="Add progress notes or context..." style={{ minHeight: 65, resize: 'vertical' }} />
                 </div>
               ) : task.notes ? (
-                <div style={{ background: 'var(--gray-50)', borderRadius: 8, padding: '0.65rem 0.9rem' }}>
-                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--gray-500)', textTransform: 'uppercase', marginBottom: 4 }}>Notes</p>
-                  <p style={{ fontSize: '0.82rem', color: 'var(--gray-700)' }}>{task.notes}</p>
+                <div style={{ background: 'var(--surface)', borderRadius: 8, padding: '0.65rem 0.9rem' }}>
+                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>Notes</p>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{task.notes}</p>
                 </div>
               ) : null}
 
               {/* Uploads — visible to everyone, uploadable by assignees */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Attachments</p>
+                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Attachments</p>
                   {canAct && (
                     <>
                       <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" multiple style={{ display: 'none' }}
@@ -240,15 +242,15 @@ export default function TasksPage() {
                 </div>
 
                 {uploads.length === 0 ? (
-                  <p style={{ fontSize: '0.78rem', color: 'var(--gray-300)', fontStyle: 'italic' }}>No attachments yet</p>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--border-strong)', fontStyle: 'italic' }}>No attachments yet</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {uploads.map(file => (
-                      <div key={file.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0.55rem 0.85rem', background: 'var(--gray-50)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                      <div key={file.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0.55rem 0.85rem', background: 'var(--surface)', borderRadius: 8, border: '1px solid var(--border)' }}>
                         <FileText size={15} color="var(--maroon)" style={{ flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontSize: '0.82rem', color: 'var(--gray-900)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</p>
-                          <p style={{ fontSize: '0.7rem', color: 'var(--gray-400)' }}>by {file.uploadedBy} ({ROLE_LABELS[file.uploadedByRole] || file.uploadedByRole}) · {file.uploadedAt}</p>
+                          <p style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</p>
+                          <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>by {file.uploadedBy} ({ROLE_LABELS[file.uploadedByRole] || file.uploadedByRole}) · {file.uploadedAt}</p>
                         </div>
                         {/* Preview / open button — visible to ALL */}
                         {file.dataUrl && (
@@ -259,9 +261,9 @@ export default function TasksPage() {
                         )}
                         {/* Remove — only uploader or president */}
                         {(file.uploadedByRole === role || isPresident) && (
-                          <button onClick={() => removeFile(task, file.name)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-300)', flexShrink: 0 }}
+                          <button onClick={() => removeFile(task, file.name)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--border-strong)', flexShrink: 0 }}
                             onMouseEnter={e => e.currentTarget.style.color='#ef4444'}
-                            onMouseLeave={e => e.currentTarget.style.color='var(--gray-300)'}>
+                            onMouseLeave={e => e.currentTarget.style.color='var(--border-strong)'}>
                             <X size={13} />
                           </button>
                         )}
@@ -299,7 +301,7 @@ export default function TasksPage() {
               ) : previewFile.type?.includes('pdf') ? (
                 <iframe src={previewFile.dataUrl} style={{ width: '100%', height: '75vh', border: 'none', borderRadius: 8 }} title={previewFile.name} />
               ) : (
-                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--gray-500)' }}>
+                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
                   <FileText size={40} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
                   <p style={{ fontWeight: 600 }}>Preview not available for this file type</p>
                   <a href={previewFile.dataUrl} download={previewFile.name} className="btn btn-primary" style={{ marginTop: '1rem', display: 'inline-flex' }}>Download File</a>
@@ -313,24 +315,31 @@ export default function TasksPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
         <div>
           <h1 style={{ fontSize: '1.75rem', letterSpacing: '-0.02em' }}>Tasks</h1>
-          <p style={{ color: 'var(--gray-500)', fontSize: '0.84rem', marginTop: 3 }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.84rem', marginTop: 3 }}>
             {isPresident ? 'Assign and track tasks across all Shura roles' : 'Your assigned tasks from President'}
           </p>
         </div>
-        {isPresident && <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}><Plus size={15} /> Assign Task</button>}
+        {isPresident && (
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowBudgetModal(true)} style={{ display:'flex', alignItems:'center', gap:5 }}>
+              <DollarSign size={13}/> Budget Request
+            </button>
+            <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}><Plus size={15} /> Assign Task</button>
+          </div>
+        )}
       </div>
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '1rem', marginBottom: '1.75rem' }}>
         {[
           { label: 'Total Tasks', value: tasks.length, color: 'var(--maroon)' },
-          { label: 'In Progress', value: tasks.filter(t => t.status === 'in_progress').length, color: '#3b82f6' },
-          { label: 'Pending', value: tasks.filter(t => t.status === 'todo').length, color: '#f59e0b' },
-          { label: 'Completed', value: completedTasks.length, color: '#10b981' },
+          { label: 'In Progress', value: tasks.filter(t => t.status === 'in_progress').length, color: 'var(--blue)' },
+          { label: 'Pending', value: tasks.filter(t => t.status === 'todo').length, color: 'var(--gold)' },
+          { label: 'Completed', value: completedTasks.length, color: 'var(--green)' },
         ].map(s => (
           <div key={s.label} className="card" style={{ textAlign: 'center', padding: '1.1rem' }}>
             <div style={{ fontSize: '1.5rem', fontFamily: 'var(--font-display)', fontWeight: 700, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: '0.73rem', color: 'var(--gray-500)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 3 }}>{s.label}</div>
+            <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 3 }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -355,7 +364,7 @@ export default function TasksPage() {
                       padding: '0.45rem 1rem', borderRadius: 8, border: '1.5px solid',
                       borderColor: form.assigned_roles.includes(v) ? ROLE_COLORS[v] : 'var(--border)',
                       background: form.assigned_roles.includes(v) ? `${ROLE_COLORS[v]}15` : 'white',
-                      color: form.assigned_roles.includes(v) ? ROLE_COLORS[v] : 'var(--gray-500)',
+                      color: form.assigned_roles.includes(v) ? ROLE_COLORS[v] : 'var(--text-muted)',
                       fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.15s',
                       display: 'flex', alignItems: 'center', gap: 6
                     }}>
@@ -364,7 +373,7 @@ export default function TasksPage() {
                     </button>
                   ))}
                 </div>
-                {form.assigned_roles.length === 0 && <p style={{ fontSize: '0.72rem', color: '#ef4444', marginTop: 4 }}>Select at least one role</p>}
+                {form.assigned_roles.length === 0 && <p style={{ fontSize: '0.72rem', color: 'var(--red)', marginTop: 4 }}>Select at least one role</p>}
               </div>
 
               <div className="form-group">
@@ -386,12 +395,12 @@ export default function TasksPage() {
 
             {/* Checklist builder */}
             <div style={{ marginBottom: '1rem' }}>
-              <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.5rem' }}>Checklist items</p>
+              <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.5rem' }}>Checklist items</p>
               {form.checklist.map((item, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <Square size={13} color="var(--gray-300)" />
-                  <span style={{ fontSize: '0.82rem', color: 'var(--gray-700)', flex: 1 }}>{item.text}</span>
-                  <button type="button" onClick={() => setForm(f => ({ ...f, checklist: f.checklist.filter((_,idx) => idx !== i) }))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-300)' }}><Trash2 size={12} /></button>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', flex: 1 }}>{item.text}</span>
+                  <button type="button" onClick={() => setForm(f => ({ ...f, checklist: f.checklist.filter((_,idx) => idx !== i) }))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--border-strong)' }}><Trash2 size={12} /></button>
                 </div>
               ))}
               <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
@@ -417,7 +426,7 @@ export default function TasksPage() {
             <button key={v} onClick={() => setFilterRole(v)} className="btn" style={{
               padding: '0.35rem 0.9rem', fontSize: '0.78rem',
               background: filterRole === v ? (ROLE_COLORS[v] || 'var(--maroon)') : 'white',
-              color: filterRole === v ? 'white' : 'var(--gray-700)',
+              color: filterRole === v ? 'white' : 'var(--text-secondary)',
               border: '1.5px solid', borderColor: filterRole === v ? (ROLE_COLORS[v] || 'var(--maroon)') : 'var(--border)'
             }}>{l}</button>
           ))}
@@ -425,12 +434,12 @@ export default function TasksPage() {
       )}
 
       {/* Active / Completed toggle */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: '1.25rem', background: 'var(--gray-100)', borderRadius: 9, padding: 4, width: 'fit-content' }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: '1.25rem', background: 'var(--surface)', borderRadius: 9, padding: 4, width: 'fit-content' }}>
         {[['active', `Active (${filterTasks(activeTasks).length})`], ['completed', `Completed (${filterTasks(completedTasks).length})`]].map(([key, label]) => (
           <button key={key} onClick={() => setActiveTab(key)} style={{
             padding: '0.45rem 1.1rem', border: 'none', borderRadius: 6, cursor: 'pointer',
             background: activeTab === key ? 'white' : 'transparent',
-            color: activeTab === key ? 'var(--maroon)' : 'var(--gray-500)',
+            color: activeTab === key ? 'var(--maroon)' : 'var(--text-muted)',
             fontWeight: 700, fontSize: '0.82rem',
             boxShadow: activeTab === key ? 'var(--shadow-sm)' : 'none',
             transition: 'all 0.15s', fontFamily: 'var(--font-body)'
@@ -442,7 +451,7 @@ export default function TasksPage() {
       {activeTab === 'active' && (
         <div className="fade-in">
           {filterTasks(activeTasks).length === 0 ? (
-            <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--gray-500)' }}>
+            <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
               <CheckSquare size={32} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
               <p style={{ fontWeight: 600 }}>No active tasks</p>
               {isPresident && <p style={{ fontSize: '0.84rem', marginTop: 4 }}>Use "Assign Task" to delegate work</p>}
@@ -454,13 +463,14 @@ export default function TasksPage() {
       {activeTab === 'completed' && (
         <div className="fade-in">
           {filterTasks(completedTasks).length === 0 ? (
-            <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--gray-500)' }}>
+            <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
               <CheckCircle2 size={32} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
               <p style={{ fontWeight: 600 }}>No completed tasks yet</p>
             </div>
           ) : filterTasks(completedTasks).map(task => <TaskCard key={task.id} task={task} />)}
         </div>
       )}
+      {showBudgetModal && <BudgetRequestModal onClose={() => setShowBudgetModal(false)} />}
     </div>
   )
 }

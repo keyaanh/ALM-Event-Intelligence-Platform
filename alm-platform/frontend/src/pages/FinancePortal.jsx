@@ -19,10 +19,10 @@ const STATUS_ICON = {
 const SOURCE_COLORS = { dues:'#7B1C2E', fundraiser:'#f59e0b', donation:'#10b981', national:'#3b82f6', campus:'#8b5cf6', other:'#6b7280' }
 const SOURCE_LABELS = { dues:'Member Dues', fundraiser:'Fundraiser', donation:'Donation', national:'National ALM', campus:'Campus Grant', other:'Other' }
 const DUES_STATUS_STYLE = {
-  paid:    { bg:'#f0fdf4', color:'#166534', border:'#86efac', label:'Paid' },
-  partial: { bg:'#fffbeb', color:'#92660a', border:'#fde68a', label:'Partial' },
-  unpaid:  { bg:'#fef2f2', color:'#991b1b', border:'#fca5a5', label:'Unpaid' },
-  exempt:  { bg:'#eff6ff', color:'#1d4ed8', border:'#93c5fd', label:'Exempt' },
+  paid:    { bg:'#f0fdf4', color:'#166534', border:'var(--green-border)', label:'Paid' },
+  partial: { bg:'#fffbeb', color:'#92660a', border:'var(--yellow-border)', label:'Partial' },
+  unpaid:  { bg:'#fef2f2', color:'#991b1b', border:'var(--red-border)', label:'Unpaid' },
+  exempt:  { bg:'#eff6ff', color:'#1d4ed8', border:'var(--blue-border)', label:'Exempt' },
 }
 const CATEGORY_OPTIONS = ['active','pledge','hiatus','alumni']
 const CATEGORY_DUES = { active:180, pledge:225, hiatus:75, alumni:0 }
@@ -41,11 +41,9 @@ export default function FinancePortal() {
   const [reviewing, setReviewing] = useState({})
   const [notes, setNotes] = useState({})
   const [showIncomeForm, setShowIncomeForm] = useState(false)
-  const [showRequestForm, setShowRequestForm] = useState(false)
   const [incomeForm, setIncomeForm] = useState({ amount:'', source:'dues', description:'', received_date:'' })
   const [requestForm, setRequestForm] = useState({ event_id:'', amount:'', purpose:'', category:'Events', items:[{description:'',amount:''}] })
   const [addingIncome, setAddingIncome] = useState(false)
-  const [submittingRequest, setSubmittingRequest] = useState(false)
   const [duesEditing, setDuesEditing] = useState(false)
   const [duesChanges, setDuesChanges] = useState({})
   const [savingDues, setSavingDues] = useState(false)
@@ -242,7 +240,7 @@ export default function FinancePortal() {
   // Build tabs
   const tabs = [
     { key:'overview', label:'Overview' },
-    { key:'budget_requests', label:`Budget Requests (${pending.length} pending)` },
+    { key:'budget_requests', label:`Approval Queue (${pending.length} pending)` },
     { key:'dues', label:`Dues (${collectionRate}% collected)` },
     { key:'budget_plan', label:'Budget Planner' },
     { key:'income', label:`Income (${income.length})` },
@@ -255,7 +253,7 @@ export default function FinancePortal() {
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'2rem' }}>
         <div>
           <h1 style={{ fontSize:'1.75rem', letterSpacing:'-0.02em' }}>Finance</h1>
-          <p style={{ color:'var(--gray-500)', fontSize:'0.84rem', marginTop:3 }}>
+          <p style={{ color:'var(--text-muted)', fontSize:'0.84rem', marginTop:3 }}>
             {CURRENT_SEMESTER} · Dues tracking, budget planning, approvals & analytics
           </p>
         </div>
@@ -263,54 +261,8 @@ export default function FinancePortal() {
           <a href="/api/export/budget-pdf?semester=Spring%202026" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ display:'flex', alignItems:'center', gap:5, fontSize:'0.82rem' }}>
             📄 Export PDF
           </a>
-          {canRequest && <button className="btn btn-outline" onClick={() => { setShowRequestForm(!showRequestForm); setShowIncomeForm(false) }}><Plus size={15}/> Budget Request</button>}
         </div>
       </div>
-
-      {/* Budget request form */}
-      {showRequestForm && (
-        <div className="card fade-in" style={{ marginBottom:'1.75rem', borderColor:'var(--maroon)', borderWidth:1.5 }}>
-          <h3 style={{ fontFamily:'var(--font-display)', fontSize:'1.05rem', color:'var(--maroon)', marginBottom:'1.1rem' }}>New budget request</h3>
-          <form onSubmit={submitRequest}>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginBottom:'1rem' }}>
-              <div className="form-group">
-                <label>Event</label>
-                <select value={requestForm.event_id} onChange={e => setRequestForm({...requestForm, event_id:e.target.value})} required>
-                  <option value="">Select event...</option>
-                  {events.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Category</label>
-                <select value={requestForm.category} onChange={e => setRequestForm({...requestForm, category:e.target.value})}>
-                  {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Total amount ($)</label>
-                <input type="number" step="0.01" value={requestForm.amount} onChange={e => setRequestForm({...requestForm, amount:e.target.value})} placeholder="250.00" required/>
-              </div>
-              <div className="form-group">
-                <label>Purpose</label>
-                <input value={requestForm.purpose} onChange={e => setRequestForm({...requestForm, purpose:e.target.value})} placeholder="Brief description" required/>
-              </div>
-            </div>
-            <p style={{ fontSize:'0.72rem', fontWeight:700, color:'var(--gray-500)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:'0.6rem' }}>Itemized breakdown</p>
-            {requestForm.items.map((item,i) => (
-              <div key={i} style={{ display:'grid', gridTemplateColumns:'1fr 140px 36px', gap:8, marginBottom:8 }}>
-                <input value={item.description} onChange={e => updateItem(i,'description',e.target.value)} placeholder="Item"/>
-                <input type="number" step="0.01" value={item.amount} onChange={e => updateItem(i,'amount',e.target.value)} placeholder="$0"/>
-                <button type="button" onClick={() => setRequestForm(f=>({...f,items:f.items.filter((_,idx)=>idx!==i)}))} style={{ background:'none', border:'1.5px solid var(--border)', borderRadius:8, cursor:'pointer', color:'var(--gray-500)', display:'flex', alignItems:'center', justifyContent:'center' }}><Trash2 size={12}/></button>
-              </div>
-            ))}
-            <button type="button" onClick={() => setRequestForm(f=>({...f,items:[...f.items,{description:'',amount:''}]}))} className="btn btn-ghost" style={{ fontSize:'0.78rem', padding:'0.35rem 0.9rem', marginBottom:'1.1rem' }}>+ Add item</button>
-            <div style={{ display:'flex', gap:'0.75rem' }}>
-              <button className="btn btn-primary" type="submit" disabled={submittingRequest}>{submittingRequest?<><Loader2 size={14} className="spin"/> Submitting…</>:'Submit for approval'}</button>
-              <button className="btn btn-ghost" type="button" onClick={()=>setShowRequestForm(false)}>Cancel</button>
-            </div>
-          </form>
-        </div>
-      )}
 
       {/* Add income form */}
       {showIncomeForm && (
@@ -341,7 +293,7 @@ export default function FinancePortal() {
         ].map(s => (
           <div key={s.label} className="card card-hover" style={{ textAlign:'center', padding:'1.1rem' }}>
             <div style={{ fontSize:'1.4rem', fontFamily:'var(--font-display)', fontWeight:700, color:s.color }}>{s.value}</div>
-            <div style={{ fontSize:'0.73rem', color:'var(--gray-500)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em', marginTop:4 }}>{s.label}</div>
+            <div style={{ fontSize:'0.73rem', color:'var(--text-muted)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em', marginTop:4 }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -357,31 +309,31 @@ export default function FinancePortal() {
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'1rem', marginBottom:'1rem' }}>
             {/* Budget gauge */}
             <div className="card" style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
-              <p style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--gray-700)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'0.5rem', alignSelf:'flex-start' }}>Budget Used</p>
+              <p style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--text-secondary)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'0.5rem', alignSelf:'flex-start' }}>Budget Used</p>
               <ResponsiveContainer width="100%" height={150}>
                 <RadialBarChart cx="50%" cy="50%" innerRadius="55%" outerRadius="80%" data={[{ value:pct, fill: pct>80?'#ef4444':pct>60?'#f59e0b':'var(--maroon)' }]} startAngle={90} endAngle={90-(pct/100)*360}>
-                  <RadialBar dataKey="value" cornerRadius={8} background={{ fill:'var(--gray-100)' }}/>
+                  <RadialBar dataKey="value" cornerRadius={8} background={{ fill:'var(--surface)' }}/>
                 </RadialBarChart>
               </ResponsiveContainer>
               <p style={{ fontFamily:'var(--font-display)', fontSize:'1.6rem', fontWeight:700, marginTop:-12 }}>{pct.toFixed(0)}%</p>
-              <p style={{ fontSize:'0.75rem', color:'var(--gray-500)', marginTop:2 }}>{CURRENT_SEMESTER}</p>
+              <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', marginTop:2 }}>{CURRENT_SEMESTER}</p>
             </div>
 
             {/* Dues collection gauge */}
             <div className="card" style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
-              <p style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--gray-700)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'0.5rem', alignSelf:'flex-start' }}>Dues Collection</p>
+              <p style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--text-secondary)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'0.5rem', alignSelf:'flex-start' }}>Dues Collection</p>
               <ResponsiveContainer width="100%" height={150}>
                 <RadialBarChart cx="50%" cy="50%" innerRadius="55%" outerRadius="80%" data={[{ value:collectionRate, fill: collectionRate>=85?'#10b981':collectionRate>=60?'#f59e0b':'#ef4444' }]} startAngle={90} endAngle={90-(collectionRate/100)*360}>
-                  <RadialBar dataKey="value" cornerRadius={8} background={{ fill:'var(--gray-100)' }}/>
+                  <RadialBar dataKey="value" cornerRadius={8} background={{ fill:'var(--surface)' }}/>
                 </RadialBarChart>
               </ResponsiveContainer>
               <p style={{ fontFamily:'var(--font-display)', fontSize:'1.6rem', fontWeight:700, marginTop:-12 }}>{collectionRate}%</p>
-              <p style={{ fontSize:'0.75rem', color:'var(--gray-500)', marginTop:2 }}>${totalCollected.toLocaleString()} / ${totalOwed.toLocaleString()}</p>
+              <p style={{ fontSize:'0.75rem', color:'var(--text-muted)', marginTop:2 }}>${totalCollected.toLocaleString()} / ${totalOwed.toLocaleString()}</p>
             </div>
 
             {/* Quick stats */}
             <div className="card">
-              <p style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--gray-700)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'0.9rem' }}>Quick Stats</p>
+              <p style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--text-secondary)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'0.9rem' }}>Quick Stats</p>
               {[
                 { label:'Members paid', value:`${duesPaid} / ${dues.length}`, color:'#10b981' },
                 { label:'Partial payment', value:duesPartial, color:'#f59e0b' },
@@ -390,7 +342,7 @@ export default function FinancePortal() {
                 { label:'Projected net', value:proj?`$${proj.net.toLocaleString(undefined,{maximumFractionDigits:0})}`:'N/A', color: proj?.net >= 0 ? '#10b981' : '#ef4444' },
               ].map(s => (
                 <div key={s.label} style={{ display:'flex', justifyContent:'space-between', padding:'0.42rem 0', borderBottom:'1px solid var(--border)' }}>
-                  <span style={{ fontSize:'0.81rem', color:'var(--gray-500)' }}>{s.label}</span>
+                  <span style={{ fontSize:'0.81rem', color:'var(--text-muted)' }}>{s.label}</span>
                   <span style={{ fontWeight:700, fontSize:'0.88rem', color:s.color }}>{s.value}</span>
                 </div>
               ))}
@@ -400,21 +352,21 @@ export default function FinancePortal() {
           {/* Category breakdown */}
           {categories.length > 0 && (
             <div className="card" style={{ marginBottom:'1rem' }}>
-              <p style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--gray-700)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'1rem' }}>Expense Category Breakdown</p>
+              <p style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--text-secondary)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'1rem' }}>Expense Category Breakdown</p>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(180px,1fr))', gap:'0.75rem' }}>
                 {categories.map(cat => {
                   const pctUsed = cat.budgeted_amount > 0 ? Math.min(100, (cat.spent/cat.budgeted_amount)*100) : 0
                   return (
-                    <div key={cat.id} style={{ background:'var(--gray-50)', borderRadius:10, padding:'0.9rem', border:'1px solid var(--border)' }}>
-                      <p style={{ fontWeight:700, fontSize:'0.84rem', color:'var(--gray-900)', marginBottom:6 }}>{cat.name}</p>
-                      <div style={{ height:6, background:'var(--gray-200)', borderRadius:99, overflow:'hidden', marginBottom:6 }}>
+                    <div key={cat.id} style={{ background:'var(--surface)', borderRadius:10, padding:'0.9rem', border:'1px solid var(--border)' }}>
+                      <p style={{ fontWeight:700, fontSize:'0.84rem', color:'var(--text-primary)', marginBottom:6 }}>{cat.name}</p>
+                      <div style={{ height:6, background:'var(--border)', borderRadius:99, overflow:'hidden', marginBottom:6 }}>
                         <div style={{ height:'100%', width:`${pctUsed}%`, background: pctUsed>90?'#ef4444':pctUsed>70?'#f59e0b':'var(--maroon)', borderRadius:99 }}/>
                       </div>
                       <div style={{ display:'flex', justifyContent:'space-between' }}>
-                        <span style={{ fontSize:'0.72rem', color:'var(--gray-500)' }}>${cat.spent.toLocaleString()} spent</span>
+                        <span style={{ fontSize:'0.72rem', color:'var(--text-muted)' }}>${cat.spent.toLocaleString()} spent</span>
                         <span style={{ fontSize:'0.72rem', color: cat.remaining>=0 ? '#10b981' : '#ef4444', fontWeight:700 }}>${cat.remaining.toLocaleString()} left</span>
                       </div>
-                      <p style={{ fontSize:'0.7rem', color:'var(--gray-300)', marginTop:2 }}>Budget: ${parseFloat(cat.budgeted_amount).toLocaleString()}</p>
+                      <p style={{ fontSize:'0.7rem', color:'var(--border-strong)', marginTop:2 }}>Budget: ${parseFloat(cat.budgeted_amount).toLocaleString()}</p>
                     </div>
                   )
                 })}
@@ -425,30 +377,30 @@ export default function FinancePortal() {
           {/* Charts */}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem' }}>
             <div className="card">
-              <p style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--gray-700)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'1rem' }}>Income by Source</p>
+              <p style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--text-secondary)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'1rem' }}>Income by Source</p>
               {incomeBySource.length>0 ? (
                 <ResponsiveContainer width="100%" height={150}>
                   <BarChart data={incomeBySource} barSize={28}>
-                    <XAxis dataKey="name" tick={{ fill:'var(--gray-500)', fontSize:10 }} axisLine={false} tickLine={false}/>
-                    <YAxis tick={{ fill:'var(--gray-500)', fontSize:10 }} axisLine={false} tickLine={false}/>
+                    <XAxis dataKey="name" tick={{ fill:'var(--text-muted)', fontSize:10 }} axisLine={false} tickLine={false}/>
+                    <YAxis tick={{ fill:'var(--text-muted)', fontSize:10 }} axisLine={false} tickLine={false}/>
                     <Tooltip contentStyle={{ background:'white', border:'1px solid var(--border)', borderRadius:8, fontSize:12 }} formatter={v=>[`$${v.toLocaleString()}`,'Amount']}/>
                     <Bar dataKey="amount" radius={[4,4,0,0]}>{incomeBySource.map((e,i)=><Cell key={i} fill={e.fill}/>)}</Bar>
                   </BarChart>
                 </ResponsiveContainer>
-              ) : <div style={{ textAlign:'center', padding:'2rem', color:'var(--gray-300)', fontSize:'0.84rem' }}>No income recorded yet</div>}
+              ) : <div style={{ textAlign:'center', padding:'2rem', color:'var(--border-strong)', fontSize:'0.84rem' }}>No income recorded yet</div>}
             </div>
             <div className="card">
-              <p style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--gray-700)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'1rem' }}>Spending by Event</p>
+              <p style={{ fontSize:'0.8rem', fontWeight:700, color:'var(--text-secondary)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'1rem' }}>Spending by Event</p>
               {spendingByEvent.length>0 ? (
                 <ResponsiveContainer width="100%" height={150}>
                   <BarChart data={spendingByEvent} barSize={28}>
-                    <XAxis dataKey="name" tick={{ fill:'var(--gray-500)', fontSize:10 }} axisLine={false} tickLine={false}/>
-                    <YAxis tick={{ fill:'var(--gray-500)', fontSize:10 }} axisLine={false} tickLine={false}/>
+                    <XAxis dataKey="name" tick={{ fill:'var(--text-muted)', fontSize:10 }} axisLine={false} tickLine={false}/>
+                    <YAxis tick={{ fill:'var(--text-muted)', fontSize:10 }} axisLine={false} tickLine={false}/>
                     <Tooltip contentStyle={{ background:'white', border:'1px solid var(--border)', borderRadius:8, fontSize:12 }} formatter={v=>[`$${v.toLocaleString()}`,'Approved']}/>
                     <Bar dataKey="total" fill="var(--maroon)" radius={[4,4,0,0]} opacity={0.85}/>
                   </BarChart>
                 </ResponsiveContainer>
-              ) : <div style={{ textAlign:'center', padding:'2rem', color:'var(--gray-300)', fontSize:'0.84rem' }}>No spending data yet</div>}
+              ) : <div style={{ textAlign:'center', padding:'2rem', color:'var(--border-strong)', fontSize:'0.84rem' }}>No spending data yet</div>}
             </div>
           </div>
         </div>
@@ -506,15 +458,15 @@ export default function FinancePortal() {
                   const status = getDueVal(member.member_id,'status')
                   const st = DUES_STATUS_STYLE[status]
                   return (
-                    <tr key={member.member_id} style={{ borderBottom:'1px solid var(--border)', background: i%2===0?'white':'var(--gray-50)' }}>
-                      <td style={{ padding:'0.6rem 1rem', fontSize:'0.84rem', fontWeight:600, color:'var(--gray-900)' }}>{member.full_name}</td>
+                    <tr key={member.member_id} style={{ borderBottom:'1px solid var(--border)', background: i%2===0?'white':'var(--surface)' }}>
+                      <td style={{ padding:'0.6rem 1rem', fontSize:'0.84rem', fontWeight:600, color:'var(--text-primary)' }}>{member.full_name}</td>
                       <td style={{ padding:'0.6rem 1rem' }}>
                         {duesEditing ? (
                           <select value={getDueVal(member.member_id,'category')} onChange={e=>setDueVal(member.member_id,'category',e.target.value)} style={{ padding:'0.3rem 0.5rem', fontSize:'0.8rem', width:'100px' }}>
                             {CATEGORY_OPTIONS.map(c=><option key={c} value={c}>{c.charAt(0).toUpperCase()+c.slice(1)}</option>)}
                           </select>
                         ) : (
-                          <span style={{ fontSize:'0.8rem', color:'var(--gray-700)', textTransform:'capitalize' }}>{getDueVal(member.member_id,'category')}</span>
+                          <span style={{ fontSize:'0.8rem', color:'var(--text-secondary)', textTransform:'capitalize' }}>{getDueVal(member.member_id,'category')}</span>
                         )}
                       </td>
                       <td style={{ padding:'0.6rem 1rem' }}>
@@ -528,7 +480,7 @@ export default function FinancePortal() {
                         {duesEditing ? (
                           <input type="number" value={getDueVal(member.member_id,'amount_paid')} onChange={e=>setDueVal(member.member_id,'amount_paid',e.target.value)} style={{ padding:'0.3rem 0.5rem', fontSize:'0.8rem', width:'80px' }}/>
                         ) : (
-                          <span style={{ fontSize:'0.84rem', color: parseFloat(getDueVal(member.member_id,'amount_paid'))>0?'#166534':'var(--gray-500)' }}>${getDueVal(member.member_id,'amount_paid')}</span>
+                          <span style={{ fontSize:'0.84rem', color: parseFloat(getDueVal(member.member_id,'amount_paid'))>0?'#166534':'var(--text-muted)' }}>${getDueVal(member.member_id,'amount_paid')}</span>
                         )}
                       </td>
                       <td style={{ padding:'0.6rem 1rem' }}>
@@ -538,7 +490,7 @@ export default function FinancePortal() {
                         {duesEditing ? (
                           <input value={getDueVal(member.member_id,'notes')||''} onChange={e=>setDueVal(member.member_id,'notes',e.target.value)} placeholder="Notes..." style={{ padding:'0.3rem 0.5rem', fontSize:'0.78rem', width:'140px' }}/>
                         ) : (
-                          <span style={{ fontSize:'0.78rem', color:'var(--gray-400)' }}>{getDueVal(member.member_id,'notes')||'—'}</span>
+                          <span style={{ fontSize:'0.78rem', color:'var(--text-muted)' }}>{getDueVal(member.member_id,'notes')||'—'}</span>
                         )}
                       </td>
                     </tr>
@@ -554,7 +506,7 @@ export default function FinancePortal() {
       {tab==='budget_plan' && (
         <div className="fade-in">
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem' }}>
-            <p style={{ fontSize:'0.84rem', color:'var(--gray-500)' }}>Semester income & expense projection — mirrors your spreadsheet</p>
+            <p style={{ fontSize:'0.84rem', color:'var(--text-muted)' }}>Semester income & expense projection — mirrors your spreadsheet</p>
           </div>
 
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1.25rem' }}>
@@ -573,9 +525,9 @@ export default function FinancePortal() {
               {projection && (
                 <table style={{ width:'100%', borderCollapse:'collapse' }}>
                   <thead><tr>
-                    <th style={{ textAlign:'left', fontSize:'0.7rem', color:'var(--gray-500)', padding:'0.4rem 0', textTransform:'uppercase' }}>Source</th>
-                    <th style={{ textAlign:'right', fontSize:'0.7rem', color:'var(--gray-500)', padding:'0.4rem 0', textTransform:'uppercase' }}>Value</th>
-                    <th style={{ textAlign:'right', fontSize:'0.7rem', color:'var(--gray-500)', padding:'0.4rem 0', textTransform:'uppercase' }}>Amount</th>
+                    <th style={{ textAlign:'left', fontSize:'0.7rem', color:'var(--text-muted)', padding:'0.4rem 0', textTransform:'uppercase' }}>Source</th>
+                    <th style={{ textAlign:'right', fontSize:'0.7rem', color:'var(--text-muted)', padding:'0.4rem 0', textTransform:'uppercase' }}>Value</th>
+                    <th style={{ textAlign:'right', fontSize:'0.7rem', color:'var(--text-muted)', padding:'0.4rem 0', textTransform:'uppercase' }}>Amount</th>
                   </tr></thead>
                   <tbody>
                     {[
@@ -591,17 +543,17 @@ export default function FinancePortal() {
                       { label:'Alumni Retreat', field:'alumni_retreat_count', unit:`× $${projForm?.alumni_retreat_fee||projection.alumni_retreat_fee}`, value: (projForm?.alumni_retreat_count||projection.alumni_retreat_count)*(projForm?.alumni_retreat_fee||projection.alumni_retreat_fee), editField:'alumni_retreat_count' },
                     ].filter(Boolean).map((row,i) => (
                       !row.hideAmount && <tr key={i} style={{ borderBottom:'1px solid var(--border)' }}>
-                        <td style={{ padding:'0.45rem 0', fontSize:row.bold?'0.84rem':'0.8rem', color:row.bold?'var(--gray-900)':'var(--gray-600)', fontWeight:row.bold?700:400 }}>{row.label} <span style={{ fontSize:'0.72rem', color:'var(--gray-400)' }}>{row.unit}</span></td>
+                        <td style={{ padding:'0.45rem 0', fontSize:row.bold?'0.84rem':'0.8rem', color:row.bold?'var(--text-primary)':'var(--gray-600)', fontWeight:row.bold?700:400 }}>{row.label} <span style={{ fontSize:'0.72rem', color:'var(--text-muted)' }}>{row.unit}</span></td>
                         <td style={{ padding:'0.45rem 0', textAlign:'right' }}>
                           {projEditing ? (
                             <input type="number" step="1" value={projForm?.[row.field]??projection[row.field]}
                               onChange={e => setProjForm(f => ({...f, [row.field]: parseFloat(e.target.value)||0}))}
                               style={{ width:80, padding:'0.25rem 0.4rem', fontSize:'0.8rem', textAlign:'right' }}/>
                           ) : (
-                            <span style={{ fontSize:'0.8rem', color:'var(--gray-500)' }}>{projection[row.field]}</span>
+                            <span style={{ fontSize:'0.8rem', color:'var(--text-muted)' }}>{projection[row.field]}</span>
                           )}
                         </td>
-                        <td style={{ padding:'0.45rem 0', textAlign:'right', fontSize:'0.84rem', fontWeight:row.bold?700:400, color:row.bold?'#166534':'var(--gray-700)' }}>
+                        <td style={{ padding:'0.45rem 0', textAlign:'right', fontSize:'0.84rem', fontWeight:row.bold?700:400, color:row.bold?'#166534':'var(--text-secondary)' }}>
                           {row.value != null ? `$${parseFloat(row.value).toLocaleString(undefined,{maximumFractionDigits:0})}` : ''}
                         </td>
                       </tr>
@@ -629,16 +581,16 @@ export default function FinancePortal() {
               </div>
               <table style={{ width:'100%', borderCollapse:'collapse' }}>
                 <thead><tr>
-                  <th style={{ textAlign:'left', fontSize:'0.7rem', color:'var(--gray-500)', padding:'0.4rem 0', textTransform:'uppercase' }}>Category</th>
-                  <th style={{ textAlign:'right', fontSize:'0.7rem', color:'var(--gray-500)', padding:'0.4rem 0', textTransform:'uppercase' }}>Budget</th>
-                  <th style={{ textAlign:'right', fontSize:'0.7rem', color:'var(--gray-500)', padding:'0.4rem 0', textTransform:'uppercase' }}>Spent</th>
-                  <th style={{ textAlign:'right', fontSize:'0.7rem', color:'var(--gray-500)', padding:'0.4rem 0', textTransform:'uppercase' }}>Balance</th>
+                  <th style={{ textAlign:'left', fontSize:'0.7rem', color:'var(--text-muted)', padding:'0.4rem 0', textTransform:'uppercase' }}>Category</th>
+                  <th style={{ textAlign:'right', fontSize:'0.7rem', color:'var(--text-muted)', padding:'0.4rem 0', textTransform:'uppercase' }}>Budget</th>
+                  <th style={{ textAlign:'right', fontSize:'0.7rem', color:'var(--text-muted)', padding:'0.4rem 0', textTransform:'uppercase' }}>Spent</th>
+                  <th style={{ textAlign:'right', fontSize:'0.7rem', color:'var(--text-muted)', padding:'0.4rem 0', textTransform:'uppercase' }}>Balance</th>
                 </tr></thead>
                 <tbody>
                   {categories.map(cat => (
                     <tr key={cat.id} style={{ borderBottom:'1px solid var(--border)' }}>
-                      <td style={{ padding:'0.45rem 0', fontSize:'0.84rem', color:'var(--gray-700)' }}>{cat.name}</td>
-                      <td style={{ padding:'0.45rem 0', textAlign:'right', fontSize:'0.82rem', color:'var(--gray-700)' }}>
+                      <td style={{ padding:'0.45rem 0', fontSize:'0.84rem', color:'var(--text-secondary)' }}>{cat.name}</td>
+                      <td style={{ padding:'0.45rem 0', textAlign:'right', fontSize:'0.82rem', color:'var(--text-secondary)' }}>
                         {catsEditing ? (
                           <input type="number" step="1" value={catsChanges[cat.id] ?? parseFloat(cat.budgeted_amount)}
                             onChange={e => setCatsChanges(prev => ({...prev, [cat.id]: e.target.value}))}
@@ -674,7 +626,7 @@ export default function FinancePortal() {
       {tab==='budget_requests' && (
         <div className="fade-in" style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
           {pending.length===0 ? (
-            <div className="card" style={{ textAlign:'center', padding:'3.5rem', color:'var(--gray-500)' }}>
+            <div className="card" style={{ textAlign:'center', padding:'3.5rem', color:'var(--text-muted)' }}>
               <CheckCircle2 size={36} color="#10b981" style={{ margin:'0 auto 0.75rem' }}/>
               <p style={{ fontWeight:600 }}>All caught up — no pending requests</p>
             </div>
@@ -684,19 +636,19 @@ export default function FinancePortal() {
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'0.9rem' }}>
                 <div>
                   <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:2 }}>
-                    <p style={{ fontWeight:700, color:'var(--gray-900)' }}>{r.event_name}</p>
+                    <p style={{ fontWeight:700, color:'var(--text-primary)' }}>{r.event_name}</p>
                     {r.category && <span style={{ fontSize:'0.68rem', color:'var(--maroon)', background:'var(--maroon-faint)', padding:'0.15rem 0.5rem', borderRadius:99, fontWeight:700 }}>{r.category}</span>}
                   </div>
-                  <p style={{ fontSize:'0.82rem', color:'var(--gray-500)' }}>{r.purpose}</p>
-                  <p style={{ fontSize:'0.73rem', color:'var(--gray-300)', marginTop:3 }}>By {r.requester_name} · {new Date(r.created_at).toLocaleDateString()}</p>
+                  <p style={{ fontSize:'0.82rem', color:'var(--text-muted)' }}>{r.purpose}</p>
+                  <p style={{ fontSize:'0.73rem', color:'var(--border-strong)', marginTop:3 }}>By {r.requester_name} · {new Date(r.created_at).toLocaleDateString()}</p>
                 </div>
                 <p style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:'1.4rem', color:'var(--maroon)', marginLeft:'1rem' }}>${r.amount.toLocaleString()}</p>
               </div>
               {r.itemized_breakdown?.length>0 && (
-                <div style={{ background:'var(--gray-50)', borderRadius:8, padding:'0.75rem', marginBottom:'0.9rem' }}>
+                <div style={{ background:'var(--surface)', borderRadius:8, padding:'0.75rem', marginBottom:'0.9rem' }}>
                   {r.itemized_breakdown.map((item,i)=>(
-                    <div key={i} style={{ display:'flex', justifyContent:'space-between', fontSize:'0.8rem', color:'var(--gray-500)', padding:'0.18rem 0' }}>
-                      <span>{item.description}</span><span style={{ color:'var(--gray-700)', fontWeight:600 }}>${parseFloat(item.amount).toFixed(2)}</span>
+                    <div key={i} style={{ display:'flex', justifyContent:'space-between', fontSize:'0.8rem', color:'var(--text-muted)', padding:'0.18rem 0' }}>
+                      <span>{item.description}</span><span style={{ color:'var(--text-secondary)', fontWeight:600 }}>${parseFloat(item.amount).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -719,23 +671,23 @@ export default function FinancePortal() {
       {tab==='income' && (
         <div className="fade-in">
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem' }}>
-            <p style={{ fontSize:'0.84rem', color:'var(--gray-500)' }}>Total recorded: <strong style={{ color:'#10b981' }}>${totalIncome.toLocaleString()}</strong></p>
+            <p style={{ fontSize:'0.84rem', color:'var(--text-muted)' }}>Total recorded: <strong style={{ color:'#10b981' }}>${totalIncome.toLocaleString()}</strong></p>
             {canAddIncome && <button className="btn btn-primary" style={{ background:'#166534' }} onClick={()=>setShowIncomeForm(true)}><Plus size={14}/> Add Income</button>}
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:'0.6rem' }}>
             {income.length===0 ? (
-              <div className="card" style={{ textAlign:'center', padding:'3rem', color:'var(--gray-500)' }}>
+              <div className="card" style={{ textAlign:'center', padding:'3rem', color:'var(--text-muted)' }}>
                 <ArrowDownCircle size={32} style={{ margin:'0 auto 0.75rem', opacity:0.3 }}/>
                 <p style={{ fontWeight:600 }}>No income recorded yet</p>
               </div>
             ) : income.map(inc=>(
               <div key={inc.id} className="card" style={{ display:'flex', alignItems:'center', gap:'1rem', padding:'1rem 1.25rem', borderLeft:`3px solid ${SOURCE_COLORS[inc.source]}` }}>
                 <div style={{ flex:1 }}>
-                  <p style={{ fontWeight:600, color:'var(--gray-900)', fontSize:'0.9rem' }}>{inc.description}</p>
+                  <p style={{ fontWeight:600, color:'var(--text-primary)', fontSize:'0.9rem' }}>{inc.description}</p>
                   <div style={{ display:'flex', gap:8, marginTop:3 }}>
                     <span style={{ fontSize:'0.72rem', background:`${SOURCE_COLORS[inc.source]}15`, color:SOURCE_COLORS[inc.source], padding:'0.15rem 0.5rem', borderRadius:99, fontWeight:700 }}>{SOURCE_LABELS[inc.source]}</span>
-                    <span style={{ fontSize:'0.72rem', color:'var(--gray-400)' }}>by {inc.adder_name||'Unknown'}</span>
-                    {inc.received_date && <span style={{ fontSize:'0.72rem', color:'var(--gray-400)' }}>{new Date(inc.received_date).toLocaleDateString()}</span>}
+                    <span style={{ fontSize:'0.72rem', color:'var(--text-muted)' }}>by {inc.adder_name||'Unknown'}</span>
+                    {inc.received_date && <span style={{ fontSize:'0.72rem', color:'var(--text-muted)' }}>{new Date(inc.received_date).toLocaleDateString()}</span>}
                   </div>
                 </div>
                 <p style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:'1.15rem', color:'#166534', flexShrink:0 }}>+${parseFloat(inc.amount).toLocaleString()}</p>
@@ -752,8 +704,8 @@ export default function FinancePortal() {
             <div key={r.id} className="card" style={{ display:'flex', alignItems:'center', gap:'1rem', padding:'1rem 1.25rem' }}>
               {STATUS_ICON[r.status]}
               <div style={{ flex:1 }}>
-                <p style={{ fontWeight:600, color:'var(--gray-900)', fontSize:'0.9rem' }}>{r.event_name}</p>
-                <p style={{ fontSize:'0.78rem', color:'var(--gray-500)' }}>{r.purpose}</p>
+                <p style={{ fontWeight:600, color:'var(--text-primary)', fontSize:'0.9rem' }}>{r.event_name}</p>
+                <p style={{ fontSize:'0.78rem', color:'var(--text-muted)' }}>{r.purpose}</p>
                 {r.reviewer_notes && <p style={{ fontSize:'0.75rem', color:'#1d4ed8', marginTop:2 }}>💬 {r.reviewer_notes}</p>}
               </div>
               <div style={{ textAlign:'right' }}>
@@ -770,19 +722,19 @@ export default function FinancePortal() {
         <div className="fade-in card" style={{ padding:0, overflow:'hidden' }}>
           <table style={{ width:'100%', borderCollapse:'collapse' }}>
             <thead>
-              <tr style={{ background:'var(--gray-50)' }}>
+              <tr style={{ background:'var(--surface)' }}>
                 {['Timestamp','Action','Entity','Details'].map(h=>(
-                  <th key={h} style={{ textAlign:'left', padding:'0.75rem 1.25rem', fontSize:'0.7rem', color:'var(--gray-500)', textTransform:'uppercase', letterSpacing:'0.07em', fontWeight:700, borderBottom:'1px solid var(--border)' }}>{h}</th>
+                  <th key={h} style={{ textAlign:'left', padding:'0.75rem 1.25rem', fontSize:'0.7rem', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.07em', fontWeight:700, borderBottom:'1px solid var(--border)' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {auditLog.map((entry,i)=>(
-                <tr key={entry.id} style={{ borderBottom:'1px solid var(--border)', background:i%2===0?'white':'var(--gray-50)' }}>
-                  <td style={{ padding:'0.65rem 1.25rem', fontSize:'0.78rem', color:'var(--gray-500)', whiteSpace:'nowrap' }}>{new Date(entry.created_at).toLocaleString()}</td>
-                  <td style={{ padding:'0.65rem 1.25rem', fontSize:'0.78rem', color:'var(--gray-900)', fontWeight:600 }}>{entry.action.replace(/_/g,' ')}</td>
-                  <td style={{ padding:'0.65rem 1.25rem', fontSize:'0.78rem', color:'var(--gray-500)' }}>{entry.entity_type}</td>
-                  <td style={{ padding:'0.65rem 1.25rem', fontSize:'0.72rem', color:'var(--gray-300)', fontFamily:'monospace' }}>{JSON.stringify(entry.metadata)}</td>
+                <tr key={entry.id} style={{ borderBottom:'1px solid var(--border)', background:i%2===0?'white':'var(--surface)' }}>
+                  <td style={{ padding:'0.65rem 1.25rem', fontSize:'0.78rem', color:'var(--text-muted)', whiteSpace:'nowrap' }}>{new Date(entry.created_at).toLocaleString()}</td>
+                  <td style={{ padding:'0.65rem 1.25rem', fontSize:'0.78rem', color:'var(--text-primary)', fontWeight:600 }}>{entry.action.replace(/_/g,' ')}</td>
+                  <td style={{ padding:'0.65rem 1.25rem', fontSize:'0.78rem', color:'var(--text-muted)' }}>{entry.entity_type}</td>
+                  <td style={{ padding:'0.65rem 1.25rem', fontSize:'0.72rem', color:'var(--border-strong)', fontFamily:'monospace' }}>{JSON.stringify(entry.metadata)}</td>
                 </tr>
               ))}
             </tbody>
